@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+
+	Copyright Pandores Marketplace 2021. All Rights Reserved. 
+
+-->
+<root xmlns:android="http://schemas.android.com/apk/res/android">
+	<init>
+		<log text="Firebase init"/>
+    
+		<setString result="ApplicationIdDefaultValue" value="ca-app-pub-3940256099942544~3347511713"/>
+
+    <!-- 
+      Modules to includes or not.
+    -->
+		<setBoolFromProperty   result="bCrashlytics"  ini="Engine" section="Firebase" property="CrashlyticsEnabled"      default="false"/>
+		<setBoolFromProperty   result="bAdMob"        ini="Engine" section="Firebase" property="AdMobEnabled"            default="true"/>
+    
+    <!--
+      General data in .ini files.
+    -->
+		<setBoolFromProperty   result="bEnabled"      ini="Engine" section="Firebase" property="FirebaseFeaturesEnabled" default="true"/>
+		<setStringFromProperty result="ApplicationId" ini="Engine" section="Firebase" property="AdMobApplicationId"      default="ca-app-pub-3940256099942544~3347511713"/>
+
+    <setBoolIsEqual result="IsApplicationIdNotDefined" arg1="$S(ApplicationId)" arg2="$S(ApplicationIdDefaultValue)"/>
+    
+
+    <if condition="bEnabled">
+		  <true>
+			  <log text="Firebase Features is enabled."/>
+
+        <if condition="bAdMob">
+          <true>
+            <if condition="IsApplicationIdNotDefined">
+
+              <false>
+                <log text=""/>
+                <log text="   -> AdMob is enabled, AdMob Application ID is '$S(ApplicationId)', taken from `DefaultEngine.ini`.`Firebase`.`ApplicationId`."/>
+              </false>
+
+              <true>
+                <log text=""/>
+                <log text=""/>
+                <log text="               ______________________________________________________________________________________________"></log>
+                <log text="               |                                                                                            |"></log>
+                <log text="               |                 ADMOB APPLICATION ID FOR FIREBASE FEATURES IS NOT SET.                     |"></log>
+                <log text="               |                                                                                            |"></log>
+                <log text="               |                 Please, set your AdMob application ID in DefaultEngine.ini                 |"></log>
+                <log text="               |                 to be able to use AdMob:                                                   |"></log>
+                <log text="               |                                                                                            |"></log>
+                <log text="               |                 [Firebase]                                                                 |"></log>
+                <log text="               |                 AdMobApplicationId=&quot;ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX&quot;                |"></log>
+                <log text="               |                                                                                            |"></log>
+                <log text="               ______________________________________________________________________________________________"></log>
+                <log text=""/>
+                <log text=""/>
+              </true>
+            </if> <!-- IsApplicationIdNotDefined -->      
+          </true>
+          <false>
+            <log text="   -> AdMob is disabled."/>
+          </false>
+        </if> <!-- bAdMob -->
+        
+        <if condition="bCrashlytics">
+          <true>
+            <log text="   -> Crashlytics is enabled."/>
+          </true>
+          <false>
+            <log text="   -> Crashlytics is disabled."/>
+          </false>
+        </if>
+        <log text=""/>
+      </true>
+	  </if>
+	</init>
+  
+  <resourceCopies>
+  </resourceCopies>
+  
+  <AARImports>
+    <if condition="bEnabled">
+      <true>
+		<!-- Replace outdated libraries that might cause conflict with the ones we are using -->
+        <replace find="com.google.android.gms,play-services-auth,11.8.0"   with="com.google.android.gms,play-services-auth,18.1.0"/>
+        <replace find="com.google.android.gms,play-services-games,11.8.0"  with="com.google.android.gms,play-services-games,20.0.1"/>
+        <replace find="com.google.android.gms,play-services-nearby,11.8.0" with="com.google.android.gms,play-services-nearby,17.0.0"/>
+        <replace find="com.google.android.gms,play-services-plus,11.8.0"   with="com.google.android.gms,play-services-plus,17.0.0"/>
+	    <replace find="com.google.firebase:firebase-messaging:11.8.0"      with="com.google.firebase:firebase-messaging:20.2.4"/>
+      </true>
+    </if>
+  </AARImports>
+
+  <gradleProperties>
+    <insert>
+      android.useAndroidX=true
+      android.enableJetifier=true
+    </insert>
+  </gradleProperties>
+
+  <baseBuildGradleAdditions>
+    <insert>
+      allprojects {
+        repositories {
+          jcenter()
+          google()
+        }
+        
+        def mappings = [
+          'android.support.annotation': 'androidx.annotation',
+          'android.arch.lifecycle': 'androidx.lifecycle',
+          'android.support.v4.app.NotificationCompat': 'androidx.core.app.NotificationCompat',
+          'android.support.v4.app.ActivityCompat': 'androidx.core.app.ActivityCompat',
+          'android.support.v4.content.ContextCompat': 'androidx.core.content.ContextCompat',
+          'android.support.v4.app.NotificationManagerCompat': 'androidx.core.app.NotificationManagerCompat',
+          'android.support.v4.content.FileProvider': 'androidx.core.content.FileProvider',
+          'android.support.v13.app.FragmentCompat': 'androidx.legacy.app.FragmentCompat',
+          'android.arch.lifecycle.Lifecycle': 'androidx.lifecycle.Lifecycle',
+          'android.arch.lifecycle.LifecycleObserver': 'androidx.lifecycle.LifecycleObserver',
+          'android.arch.lifecycle.OnLifecycleEvent': 'androidx.lifecycle.OnLifecycleEvent',
+          'android.arch.lifecycle.ProcessLifecycleOwner': 'androidx.lifecycle.ProcessLifecycleOwner',
+          'AppCompatActivity': 'Activity',
+        ]
+
+        beforeEvaluate { project ->
+          println ""
+          println "Updating to AndroidX:"
+          project.rootProject.projectDir.traverse(type: groovy.io.FileType.FILES, nameFilter: ~/.*\.java$/) { f ->
+            mappings.each { entry ->
+              if (f.getText('UTF-8').contains(entry.key)) {
+                println " -> Updating ${entry.key.padRight(50)} to ${entry.value.padRight(45)} in file ${f}"
+                ant.replace(file: f, token: entry.key, value: entry.value)
+              }
+            }
+          }
+        }
+        
+        afterEvaluate {
+          repositories {
+            flatDir {
+              dirs  "</insert><insertValue value="$S(PluginDir)"/><insert>/../ThirdParty/firebase_cpp_sdk/libs/android/"
+            }
+          }
+        }
+      }
+    </insert>
+  </baseBuildGradleAdditions>
+
+  <androidManifestUpdates>
+    
+		<if condition="bEnabled">
+			<true>
+				<if condition="bAdMob">
+					<true>
+						<if condition="IsApplicationIdNotDefined">
+						<false>
+							<setElement
+							result="AdMobAppId"
+							value="meta-data" />
+							<addAttribute
+							tag="$AdMobAppId"
+							name="android:name"
+							value="com.google.android.gms.ads.APPLICATION_ID" />
+							<addAttribute
+							tag="$AdMobAppId"
+							name="android:value"
+							value="$S(ApplicationId)" />
+			
+							<addElement
+							tag="application"
+							name="AdMobAppId" />
+						</false>
+						</if>
+					</true>  
+				</if>        
+			</true>
+		</if>
+		
+	</androidManifestUpdates>
+
+	<buildscriptGradleAdditions>
+		<if condition="bEnabled">
+			<true>
+				<insert>
+					dependencies {
+						classpath 'com.google.gms:google-services:4.3.4'
+				</insert>
+				<if condition ="bCrashlytics">
+				<true>
+					<insert>
+						classpath 'com.google.firebase:firebase-crashlytics-gradle:2.3.0'
+					</insert>
+				</true>
+				</if>
+				<insert>
+					}
+				</insert>
+			</true>
+		</if>
+	</buildscriptGradleAdditions>
+
+	<buildGradleAdditions>
+		<if condition="bEnabled">
+			<true>
+				<insert>
+					android {
+						defaultConfig {}
+					}
+					dependencies {
+						implementation fileTree(dir: 'libs', include: ['*.jar'])
+						implementation 'com.google.firebase:firebase-analytics:18.0.0'
+						implementation 'com.google.android.gms:play-services-measurement-sdk-api:17.5.0'
+						implementation 'com.google.android.gms:play-services-base:17.4.0'
+						implementation 'com.google.firebase:firebase-auth:19.3.2'
+						implementation 'com.google.firebase:firebase-database:19.4.0'
+						implementation 'com.google.firebase:firebase-dynamic-links:19.1.0'
+						implementation 'com.google.firebase:firebase-firestore:21.6.0'
+						implementation 'com.google.firebase:firebase-functions:19.1.0'
+						implementation 'com.google.firebase:firebase-iid:20.2.4'
+						implementation 'com.google.firebase:firebase_messaging_cpp@aar'
+						implementation 'com.google.firebase:firebase-messaging:20.2.4'
+						implementation 'com.google.firebase:firebase-perf:19.0.8'
+						implementation 'androidx.core:core:1.0.1'
+						implementation 'com.google.firebase:firebase-config:19.2.0'
+						implementation 'com.google.android.gms:play-services-base:17.4.0'
+						implementation 'com.google.firebase:firebase-storage:19.2.0'
+            
+				</insert>
+				
+				<if condition="bAdMob">
+					<true>
+            <insert>
+              implementation 'com.google.android.gms:play-services-ads:20.1.0'
+              implementation 'com.google.firebase:firebase-ads:20.1.0'
+            </insert>
+					</true>
+				</if>
+				
+				<if condition ="bCrashlytics">
+				<true>
+					<insert>
+						implementation 'com.google.firebase:firebase-crashlytics:17.2.1'
+					</insert>
+				</true>
+				</if>
+				<insert>
+					}
+					
+					apply plugin: 'com.android.application'
+					apply plugin: 'com.google.gms.google-services'
+					
+				</insert>
+				<if condition ="bCrashlytics">
+					<true>
+					<insert>
+						apply plugin: 'com.google.firebase.crashlytics'
+					</insert>
+					</true>
+				</if>
+			</true>
+		</if>
+	</buildGradleAdditions>
+  
+  <proguardAdditions>
+    <insert>
+      -keepattributes Signature
+      -keepattributes *Annotation*
+      -keepattributes EnclosingMethod
+      -keepattributes InnerClasses
+      -keep class com.google.android.gms.** { *; }
+      -dontwarn com.google.android.gms.**
+
+      # Gms
+      -keep,includedescriptorclasses public class com.google.android.gms.common.api.PendingResult { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.api.Result { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.api.ResultCallback { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.api.Status { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.ConnectionResult { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.GoogleApiAvailability { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.GoogleApiAvailability{ *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.crash.internal.api.CrashApiImpl { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnFailureListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnSuccessListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.Task { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseApp{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseOptions{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseOptions$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.analytics.FirebaseAnalytics{ *; }
+      
+      # Auth
+      -keep,includedescriptorclasses public class com.google.firebase.app.internal.cpp.Log { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.AdditionalUserInfo{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.AuthCredential{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.AuthResult{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.EmailAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FacebookAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuth { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuth{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthActionCodeException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuth$AuthStateListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthEmailException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuth$IdTokenListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthInvalidCredentialsException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthInvalidUserException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthUserCollisionException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthWeakPasswordException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseAuthWebException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseUser{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.FirebaseUserMetadata{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.GetTokenResult{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.GithubAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.GoogleAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.OAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.OAuthProvider$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.OAuthProvider$CredentialBuilder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthCredential { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthCredential{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthProvider { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthProvider$ForceResendingToken { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PhoneAuthProvider$OnVerificationStateChangedCallbacks { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.PlayGamesAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.SignInMethodQueryResult{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.TwitterAuthProvider{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.UserInfo{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.auth.UserProfileChangeRequest$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseApiNotAvailableException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseException { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseNetworkException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseTooManyRequestsException{ *; }
+      -keep,includedescriptorclasses public class java.util.concurrent.TimeUnit{ *; }
+      
+      # AdMob
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.AdListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.AdRequest { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.AdRequest$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.AdSize { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.AdView { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.InterstitialAd { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.MobileAds { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.MobileAds{ *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.NativeExpressAdView { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.reward.RewardedVideoAd { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.reward.RewardedVideoAdListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.ads.reward.RewardItem { *; }
+
+      # Analytics
+      -keep,includedescriptorclasses public class com.google.firebase.analytics.FirebaseAnalytics{ *; }
+      
+      # App
+      -keep,includedescriptorclasses public class com.google.android.gms.common.GoogleApiAvailability { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.common.GoogleApiAvailability{ *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.crash.internal.api.CrashApiImpl { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnCanceledListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnFailureListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnSuccessListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.Task { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseApp{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseOptions{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.FirebaseOptions$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.platforminfo.GlobalLibraryVersionRegistrar{ *; }
+      -keep,includedescriptorclasses public class dalvik.system.DexClassLoader{ *; }
+      
+      # Database
+      -keep,includedescriptorclasses public class com.google.firebase.database.ChildEventListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.DatabaseError { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.DatabaseError{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.DatabaseReference{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.DataSnapshot { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.DataSnapshot{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.FirebaseDatabase{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.Logger$Level{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.MutableData { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.MutableData{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.OnDisconnect{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.Query{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.Transaction { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.Transaction$Handler { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.Transaction$Result { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.database.ValueEventListener { *; }
+      
+      # Dynamic Links
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnFailureListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.OnSuccessListener { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.tasks.Task { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.app.internal.cpp.Log { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$AndroidParameters$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$GoogleAnalyticsParameters$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$IosParameters$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$ItunesConnectAnalyticsParameters$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.DynamicLink$SocialMetaTagParameters$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.FirebaseDynamicLinks { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.FirebaseDynamicLinks{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.PendingDynamicLinkData { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.PendingDynamicLinkData{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.ShortDynamicLink{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.ShortDynamicLink$Suffix{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.dynamiclinks.ShortDynamicLink$Warning{ *; }
+      
+      # Firestore
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Blob{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.CollectionReference{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentChange{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentChange$Type{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentReference{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentSnapshot { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentSnapshot{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.DocumentSnapshot$ServerTimestampBehavior{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.EventListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FieldPath{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FieldValue{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestore{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreException { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreException$Code { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreException$Code{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreSettings{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.FirebaseFirestoreSettings$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.GeoPoint{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.internal.cpp.SilentRejectionSingleThreadExecutor{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.internal.cpp.TransactionFunction{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.ListenerRegistration{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.MetadataChanges{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Query{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Query$Direction{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.QuerySnapshot { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.QuerySnapshot{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.SetOptions{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.SnapshotMetadata{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Source{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Transaction { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Transaction{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.Transaction$Function { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.firestore.WriteBatch{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.Timestamp{ *; }
+      -keep,includedescriptorclasses public class java.lang.IllegalStateException{ *; }
+
+      # Functions
+      -keep,includedescriptorclasses public class com.google.firebase.functions.FirebaseFunctions{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.functions.FirebaseFunctionsException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.functions.FirebaseFunctionsException$Code{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.functions.HttpsCallableReference{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.functions.HttpsCallableResult{ *; }
+      
+      # Instance ID
+      -keep,includedescriptorclasses public class com.google.firebase.iid.FirebaseInstanceId{ *; }
+
+      # Messaging
+      -keep,includedescriptorclasses public class com.google.android.gms.messaging.cpp.DebugLogging { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.messaging.cpp.ListenerService { *; }
+      -keep,includedescriptorclasses public class com.google.android.gms.messaging.cpp.RegistrationIntentService { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.messaging.cpp.RegistrationIntentService{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.messaging.FirebaseMessaging{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.messaging.RemoteMessage$Builder{ *; }
+      -keep,includedescriptorclasses public class java.lang.IllegalArgumentException{ *; }
+      
+      # Remote Config
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfig{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.remoteconfig.FirebaseRemoteConfigValue{ *; }
+
+      # Storage
+      -keep,includedescriptorclasses public class com.google.firebase.storage.FileDownloadTask$TaskSnapshot{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.FirebaseStorage{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.OnPausedListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.OnProgressListener { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StorageException{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StorageMetadata{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StorageMetadata$Builder{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StorageReference{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StorageTask{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StreamDownloadTask { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StreamDownloadTask$StreamProcessor { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StreamDownloadTask$TaskSnapshot { *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.StreamDownloadTask$TaskSnapshot{ *; }
+      -keep,includedescriptorclasses public class com.google.firebase.storage.UploadTask$TaskSnapshot{ *; }
+      -keep,includedescriptorclasses public class java.lang.IndexOutOfBoundsException{ *; }   
+      
+    </insert>
+  </proguardAdditions>
+
+	<prebuildCopies>
+		<if condition="bEnabled">
+			<true>
+				<!--copyDir src="$S(PluginDir)/Java" dst="$S(BuildDir)/src/com/epicgames/ue4"/-->
+			</true>
+		</if>
+	</prebuildCopies>
+	
+	<gradleCopies>
+		<if condition="bEnabled">
+			<true>
+				<copyFile src="$S(ProjectDir)/Services/google-services.json" dst="$S(BuildDir)/gradle/app/google-services.json" force="true"/>
+			</true>
+		</if>
+	</gradleCopies>
+
+	<resourceCopies>
+		<copyFile src="$S(ProjectDir)/Services/google-services.json" dst="$S(BuildDir)/google-services.json" force="true"/>
+	</resourceCopies>
+
+	<gameActivityAllowedRemoteNotificationsAdditions>
+		<if condition="bEnabled">
+			<true>
+				<insert>bPluginEnabled = true;</insert>
+				<insertNewline/>
+			</true>
+		</if>
+	</gameActivityAllowedRemoteNotificationsAdditions>
+
+  <gameActivityImportAdditions>
+    <if condition="bEnabled">
+      <true>
+        <insert>
+import com.google.firebase.messaging.MessageForwardingService;
+</insert>
+      </true>
+    </if>    
+  </gameActivityImportAdditions>
+
+  <gameActivityOnNewIntentAdditions>
+    <if condition="bEnabled">
+      <true>
+        <insert>
+          
+        // Firebase - Features.
+        // Used to route notifications while the app is closed through FCM.
+        {
+            final Intent message = new Intent(this, MessageForwardingService.class);
+            message.setAction(MessageForwardingService.ACTION_REMOTE_INTENT);
+            message.putExtras(newIntent);
+            message.setData(newIntent.getData());
+            startService(message);
+        }
+        </insert>
+      </true>
+    </if>
+  </gameActivityOnNewIntentAdditions>
+
+</root>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

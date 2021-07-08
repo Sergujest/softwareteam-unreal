@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "575444833989",
+    "project_id": "unreal-4",
+    "storage_bucket": "unreal-4.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:575444833989:android:3b31aec6491f89d90802ac",
+        "android_client_info": {
+          "package_name": "com.test.unreal3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "575444833989-95au9m87i9ckjn108p7jeus8evemmo0j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaTrJ4m1xuB6hUYPnkjCpcnFCk5a7WqeY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "575444833989-95au9m87i9ckjn108p7jeus8evemmo0j.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "575444833989-db1sh8c6m9kqbtth52lot83670l0jcpt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.test.unreal3"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

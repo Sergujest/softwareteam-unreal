@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+
+	Copyright Pandores Marketplace 2021. All Rights Reserved. 
+
+-->
+<root>
+	<init>
+    <log text="Firebase init"/>
+
+    <setString result="ApplicationIdDefaultValue" value="FIREBASE_FEATURES_NO_APPLICATION_ID"/>
+
+    <setBoolFromProperty   result="bCrashlytics"  ini="Engine" section="Firebase" property="CrashlyticsEnabled"      default="false"/>
+    <setBoolFromProperty   result="bEnabled"      ini="Engine" section="Firebase" property="FirebaseFeaturesEnabled" default="true"/>
+    <setStringFromProperty result="ApplicationId" ini="Engine" section="Firebase" property="AdMobApplicationId"      default="FIREBASE_FEATURES_NO_APPLICATION_ID"/>
+
+    <setBoolIsEqual result="IsApplicationIdNotDefined" arg1="$S(ApplicationId)" arg2="$S(ApplicationIdDefaultValue)"/>
+
+    <if condition="bEnabled">
+			<true>
+        <log text="Firebase Features is enabled."/>
+
+        <if condition="IsApplicationIdNotDefined">
+
+          <false>
+            <log text=""/>
+            <log text="   -> AdMob Application ID is '$S(ApplicationId)', taken from `DefaultEngine.ini`.`Firebase`.`ApplicationId`."/>
+          </false>
+
+          <true>
+            <log text=""/>
+            <log text=""/>
+            <log text="               ______________________________________________________________________________________________"></log>
+            <log text="               |                                                                                            |"></log>
+            <log text="               |                 ADMOB APPLICATION ID FOR FIREBASE FEATURES IS NOT SET.                     |"></log>
+            <log text="               |                                                                                            |"></log>
+            <log text="               |                 Please, set your AdMob application ID in DefaultEngine.ini                 |"></log>
+            <log text="               |                 to be able to use AdMob:                                                   |"></log>
+            <log text="               |                                                                                            |"></log>
+            <log text="               |                 [Firebase]                                                                 |"></log>
+            <log text="               |                 AdMobApplicationId=&quot;ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX&quot;                |"></log>
+            <log text="               |                                                                                            |"></log>
+            <log text="               ______________________________________________________________________________________________"></log>
+            <log text=""/>
+            <log text=""/>
+          </true>
+        </if>
+      </true>
+    </if>
+  </init>
+  
+  <iosPListUpdates>
+	<log text="Copying `GoogleService-Info.plist` into the build directory."/>
+	<copyFile src="$S(ProjectDir)/Services/GoogleService-Info.plist" dst="$S(BuildDir)/../../../GoogleService-Info.plist" force="false"/>
+	<copyFile src="$S(ProjectDir)/Services/GoogleService-Info.plist" dst="$S(BuildDir)/GoogleService-Info.plist" force="false"/>
+
+    <if condition="IsApplicationIdNotDefined">
+      <false>
+
+        <loopElements tag="dict">
+          <setElement result="GADAppIdKey" xml="&lt;key&gt;GADApplicationIdentifier&lt;/key&gt;"/>
+          <setElement result="GADAppIdVal" xml="&lt;string&gt;$S(ApplicationId)&lt;/string&gt;"/>
+
+          <addElement
+          tag="dict"
+          name="GADAppIdKey" />
+
+          <addElement
+          tag="dict"
+          name="GADAppIdVal" />
+
+        </loopElements>
+		
+		<addElements tag="dict">
+			<key>SKAdNetworkItems</key>
+			<array>
+				<dict>
+					<key>SKAdNetworkIdentifier</key>
+					<string>cstr6suwn9.skadnetwork</string>
+				</dict>
+			</array>
+		</addElements>
+      </false>
+    </if>
+  </iosPListUpdates>
+</root>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
