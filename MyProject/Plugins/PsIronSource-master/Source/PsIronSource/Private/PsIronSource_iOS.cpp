@@ -1,6 +1,7 @@
 // Copyright 2015-2020 Mail.Ru Group. All Rights Reserved.
 
 #include "PsIronSource_iOS.h"
+#include "../ThirdParty/iOS/GoogleMobileAds.embeddedframework/GoogleMobileAds.framework/Headers/GADMobileAds.h"
 
 UPsIronSource_iOS::UPsIronSource_iOS(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -161,7 +162,9 @@ void UPsIronSource_iOS::InitIronSource(const FString& UserId)
 //      [IronSource initWithAppKey:AppKeyNativeString adUnits:myArray];
 	  [IronSource initWithAppKey:AppKeyNativeString];
 	  [ISIntegrationHelper validateIntegration];
+      GADMobileAds.sharedInstance.requestConfiguration.testDeviceIdentifiers = @[ @"f4900d0feb50232f545b55a3d44bcabd" ];
 	});
+    
 
 	bIronSourceInitialized = true;
 }

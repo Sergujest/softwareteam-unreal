@@ -51,13 +51,6 @@ namespace UnrealBuildTool.Rules
 
                     PublicAdditionalFrameworks.Add(
                         new Framework(
-                            "IronSourceAdapter",
-                            "./ThirdParty/iOS/IronSourceAdapter.embeddedframework.zip"
-                        )
-                    );
-
-                    PublicAdditionalFrameworks.Add(
-                        new Framework(
                             "ISAdMobAdapter",
                             "./ThirdParty/iOS/ISAdMobAdapter.embeddedframework.zip"
                         )
